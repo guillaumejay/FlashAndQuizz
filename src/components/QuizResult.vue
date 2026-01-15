@@ -6,7 +6,7 @@ const props = defineProps<{
   totalQuestions: number
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   restart: []
 }>()
 
