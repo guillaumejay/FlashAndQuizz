@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dungeon-dark: #1a1a2e;
+  --color-dungeon-medium: #16213e;
+  --color-dungeon-light: #0f3460;
+  --color-gold: #d4af37;
+  --color-gold-light: #f4d03f;
+  --color-blood: #8b0000;
+  --color-emerald: #2ecc71;
+  --color-parchment: #f5e6d3;
+}
+
+@font-face {
+  font-family: 'MedievalSharp';
+  src: url('https://fonts.gstatic.com/s/medievalsharp/v26/EvOJzAlL3oU5AQl2mP5KdgptAq96MQ.woff2') format('woff2');
+  font-display: swap;
+}
