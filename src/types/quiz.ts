@@ -10,4 +10,11 @@ export interface Question {
   answerOptions: AnswerOption[]
 }
 
+export interface Flashcard {
+  f: string  // front (question)
+  b: string  // back (answer)
+}
+
+export type GameMode = 'menu' | 'quiz' | 'flashcard'
 export type QuizState = 'start' | 'playing' | 'finished'
+export type FlashcardMode = 'partial' | 'full'

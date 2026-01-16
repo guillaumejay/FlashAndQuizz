@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
-  score: number
-  totalQuestions: number
+  known: number
+  total: number
 }>()
 
 defineEmits<{
@@ -11,14 +11,14 @@ defineEmits<{
   menu: []
 }>()
 
-const percentage = computed(() => Math.round((props.score / props.totalQuestions) * 100))
+const percentage = computed(() => Math.round((props.known / props.total) * 100))
 
 const resultMessage = computed(() => {
-  if (percentage.value === 100) return { title: 'Parfait !', subtitle: 'Vous êtes un expert de Donjon & Cie !' }
-  if (percentage.value >= 80) return { title: 'Excellent !', subtitle: 'Vous connaissez très bien le jeu.' }
-  if (percentage.value >= 60) return { title: 'Bien joué !', subtitle: 'Vous avez de bonnes connaissances.' }
-  if (percentage.value >= 40) return { title: 'Pas mal !', subtitle: 'Il y a encore des choses à apprendre.' }
-  return { title: 'Courage !', subtitle: 'Relisez le livre et réessayez !' }
+  if (percentage.value === 100) return { title: 'Parfait !', subtitle: 'Vous maîtrisez toutes les cartes !' }
+  if (percentage.value >= 80) return { title: 'Excellent !', subtitle: 'Vous connaissez très bien le sujet.' }
+  if (percentage.value >= 60) return { title: 'Bien joué !', subtitle: 'Continuez à réviser.' }
+  if (percentage.value >= 40) return { title: 'En progrès !', subtitle: 'Quelques révisions supplémentaires vous aideront.' }
+  return { title: 'Courage !', subtitle: 'Prenez le temps de réviser les cartes.' }
 })
 
 const resultEmoji = computed(() => {
@@ -32,7 +32,7 @@ const resultEmoji = computed(() => {
 
 <template>
   <div class="w-full max-w-2xl mx-auto text-center">
-    <!-- Trophy/Result Icon -->
+    <!-- Result Icon -->
     <div class="mb-8">
       <div class="text-8xl mb-4">{{ resultEmoji }}</div>
       <h2 class="text-3xl md:text-4xl font-bold text-gold mb-2">{{ resultMessage.title }}</h2>
@@ -42,7 +42,7 @@ const resultEmoji = computed(() => {
     <!-- Score Display -->
     <div class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-8 mb-8 shadow-xl">
       <div class="text-6xl md:text-7xl font-bold text-gold mb-4">
-        {{ score }}<span class="text-parchment/50">/</span>{{ totalQuestions }}
+        {{ known }}<span class="text-parchment/50">/</span>{{ total }}
       </div>
 
       <!-- Progress Ring -->
@@ -75,7 +75,7 @@ const resultEmoji = computed(() => {
       </div>
 
       <p class="text-parchment/60">
-        Vous avez répondu correctement à {{ score }} question{{ score > 1 ? 's' : '' }} sur {{ totalQuestions }}.
+        Vous connaissiez {{ known }} carte{{ known > 1 ? 's' : '' }} sur {{ total }}.
       </p>
     </div>
 
