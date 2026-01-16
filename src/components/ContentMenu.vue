@@ -1,81 +1,98 @@
 <script setup lang="ts">
-import type { InventoryItem, LoadingState } from '../types/inventory'
+import type { InventoryItem } from '../types/inventory'
+import type { FlashcardMode } from '../types/quiz'
 
 defineProps<{
   gameName: string
   items: InventoryItem[]
-  contentLoadingState: LoadingState
-  contentError: string | null
+  loadingItem: InventoryItem | null
 }>()
 
 const emit = defineEmits<{
-  selectItem: [item: InventoryItem]
+  startQuiz: [item: InventoryItem]
+  startFlashcards: [item: InventoryItem, mode: FlashcardMode]
   back: []
 }>()
-
-function getTypeIcon(type: string): string {
-  return type === 'Quizz' ? '📝' : '🃏'
-}
-
-function getTypeLabel(type: string): string {
-  return type === 'Quizz' ? 'Quiz' : 'Flashcards'
-}
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto text-center py-8">
-    <!-- Loading Content -->
-    <div v-if="contentLoadingState === 'loading'" class="py-12">
-      <div class="text-5xl mb-4 animate-pulse">📥</div>
-      <p class="text-parchment/70">Chargement du contenu...</p>
+  <div class="max-w-4xl mx-auto py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <button
+        @click="emit('back')"
+        class="text-gold hover:text-gold-light transition-colors mb-4 inline-flex items-center gap-2"
+      >
+        ← Retour aux jeux
+      </button>
+      <h2 class="text-3xl md:text-4xl font-bold text-gold mb-2">
+        {{ gameName }}
+      </h2>
+      <p class="text-parchment/60">
+        Choisissez un contenu pour commencer
+      </p>
     </div>
 
-    <!-- Content List -->
-    <div v-else>
-      <div class="mb-8">
-        <button
-          @click="emit('back')"
-          class="text-gold hover:text-gold-light transition-colors mb-4 inline-flex items-center gap-2"
-        >
-          ← Retour aux jeux
-        </button>
-        <h2 class="text-3xl md:text-4xl font-bold text-gold mb-2">
-          {{ gameName }}
-        </h2>
-        <p class="text-parchment/60">
-          Choisissez un contenu
-        </p>
-      </div>
-
-      <!-- Error message -->
+    <!-- Content Cards Grid -->
+    <div class="grid md:grid-cols-2 gap-6">
       <div
-        v-if="contentError"
-        class="mb-6 p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-200 text-sm"
+        v-for="item in items"
+        :key="item.url"
+        class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-6 hover:border-gold/60 transition-all"
       >
-        ❌ {{ contentError }}
-      </div>
-
-      <!-- Items Grid -->
-      <div class="grid md:grid-cols-2 gap-4">
-        <button
-          v-for="item in items"
-          :key="item.url"
-          @click="emit('selectItem', item)"
-          class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-6 hover:border-gold/60 transition-all text-left"
+        <!-- Loading overlay -->
+        <div
+          v-if="loadingItem?.url === item.url"
+          class="text-center py-4"
         >
-          <div class="text-4xl mb-3">{{ getTypeIcon(item.type) }}</div>
-          <h3 class="text-lg font-bold text-gold mb-1">{{ item.titre }}</h3>
-          <span class="inline-block px-2 py-1 bg-dungeon-dark/50 rounded text-xs text-parchment/60">
-            {{ getTypeLabel(item.type) }}
-          </span>
-        </button>
-      </div>
+          <div class="text-4xl mb-3 animate-pulse">📥</div>
+          <p class="text-parchment/70">Chargement...</p>
+        </div>
 
-      <!-- Empty State -->
-      <div v-if="items.length === 0" class="py-8">
-        <div class="text-5xl mb-4">📭</div>
-        <p class="text-parchment/60">Aucun contenu disponible pour ce jeu</p>
+        <!-- Quiz Card -->
+        <template v-else-if="item.type === 'Quizz'">
+          <div class="text-5xl mb-4 text-center">📝</div>
+          <h3 class="text-xl font-bold text-gold mb-2 text-center">{{ item.titre }}</h3>
+          <p class="text-parchment/60 text-sm mb-4 text-center">
+            Questions à choix multiples avec feedback immédiat
+          </p>
+          <button
+            @click="emit('startQuiz', item)"
+            class="w-full px-6 py-3 bg-gradient-to-r from-gold to-gold-light text-dungeon-dark font-bold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gold/30"
+          >
+            🎲 Lancer le quiz
+          </button>
+        </template>
+
+        <!-- Flashcard Card -->
+        <template v-else-if="item.type === 'Flash'">
+          <div class="text-5xl mb-4 text-center">🃏</div>
+          <h3 class="text-xl font-bold text-gold mb-2 text-center">{{ item.titre }}</h3>
+          <p class="text-parchment/60 text-sm mb-4 text-center">
+            Cartes recto-verso pour réviser
+          </p>
+          <div class="space-y-2">
+            <button
+              @click="emit('startFlashcards', item, 'partial')"
+              class="w-full px-6 py-2 bg-dungeon-light border border-gold/50 text-gold font-semibold rounded-lg transition-all duration-300 hover:bg-gold/20"
+            >
+              ⚡ Mode rapide (30 cartes)
+            </button>
+            <button
+              @click="emit('startFlashcards', item, 'full')"
+              class="w-full px-6 py-3 bg-gradient-to-r from-gold to-gold-light text-dungeon-dark font-bold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gold/30"
+            >
+              📚 Mode complet
+            </button>
+          </div>
+        </template>
       </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-if="items.length === 0" class="text-center py-12">
+      <div class="text-5xl mb-4">📭</div>
+      <p class="text-parchment/60">Aucun contenu disponible pour ce jeu</p>
     </div>
   </div>
 </template>

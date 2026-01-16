@@ -15,7 +15,7 @@ export interface Flashcard {
   b: string  // back (answer)
 }
 
-export type GameMode = 'menu' | 'gameSelection' | 'contentSelection' | 'quiz' | 'flashcard'
+export type GameMode = 'menu' | 'gameSelection' | 'quiz' | 'flashcard'
 export type QuizState = 'start' | 'playing' | 'finished'
 export type FlashcardMode = 'partial' | 'full'
 

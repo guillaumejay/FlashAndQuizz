@@ -111,6 +111,19 @@ async function refreshAll(): Promise<void> {
   await loadInventory(true)
 }
 
+function findItemByTitle(game: string, title: string): InventoryItem | null {
+  const items = groupedInventory.value[game]
+  if (!items) return null
+  return items.find(item => item.titre === title) || null
+}
+
+async function loadContentByTitle(game: string, title: string): Promise<boolean> {
+  const item = findItemByTitle(game, title)
+  if (!item) return false
+  await loadContent(item)
+  return contentLoadingState.value === 'success'
+}
+
 export function useGameContent() {
   return {
     // State
@@ -132,6 +145,8 @@ export function useGameContent() {
     selectGame,
     clearSelection,
     clearGameSelection,
-    refreshAll
+    refreshAll,
+    findItemByTitle,
+    loadContentByTitle
   }
 }
