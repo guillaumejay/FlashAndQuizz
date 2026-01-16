@@ -4,7 +4,7 @@ import { toRawGistUrl } from "../utils/gistUrl";
 import * as cacheService from "./cacheService";
 
 // Inventory URL - configure this with your Gist URL
-const INVENTORY_URL = "https://gist.githubusercontent.com/guillaumejay/684d9dc87e9e158477b0e4fc4164f422/raw/4b408b3c08541587a4478c023a4a106f8a8dabfb/FQ-Inventaire.json";
+const INVENTORY_URL = "https://gist.githubusercontent.com/guillaumejay/684d9dc87e9e158477b0e4fc4164f422/raw/eea902baa9320d11b1455ecb1267a013c8f9ed12/FQ-Inventaire.json";
 
 export interface FetchResult<T> {
 	data: T | null;
