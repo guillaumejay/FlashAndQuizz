@@ -1,0 +1,3 @@
+# FlashAndQuizz
+
+@AGENTS.md

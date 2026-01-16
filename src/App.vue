@@ -1,16 +1,33 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { QuizState, Question, Flashcard, GameMode, FlashcardMode } from './types/quiz'
-import quizData from './data/quiz.json'
-import flashcardData from './data/flashcards.json'
+import type { InventoryItem } from './types/inventory'
+import { useGameContent } from './composables/useGameContent'
 import QuizQuestion from './components/QuizQuestion.vue'
 import QuizResult from './components/QuizResult.vue'
 import FlashcardGame from './components/FlashcardGame.vue'
 import FlashcardResult from './components/FlashcardResult.vue'
+import GameMenu from './components/GameMenu.vue'
+import ContentMenu from './components/ContentMenu.vue'
 
-// Data
-const originalQuestions = quizData as Question[]
-const originalFlashcards = flashcardData as Flashcard[]
+// Game content composable
+const {
+  loadingState,
+  error,
+  selectedGame,
+  selectedItem,
+  selectedContent,
+  contentLoadingState,
+  contentError,
+  games,
+  selectedGameItems,
+  loadInventory,
+  loadContent,
+  selectGame,
+  clearSelection,
+  clearGameSelection,
+  refreshAll
+} = useGameContent()
 
 // State
 const gameMode = ref<GameMode>('menu')
@@ -29,8 +46,18 @@ const flashcardTotal = ref(0)
 
 // Computed
 const currentQuestion = computed(() => shuffledQuestions.value[currentQuestionIndex.value])
-const totalQuizQuestions = computed(() => originalQuestions.length)
-const totalFlashcards = computed(() => originalFlashcards.length)
+const totalQuizQuestions = computed(() => shuffledQuestions.value.length)
+// totalFlashcards computed removed - not used in template
+
+const headerTitle = computed(() => {
+  if (selectedItem.value) {
+    return selectedItem.value.titre
+  }
+  if (selectedGame.value) {
+    return selectedGame.value
+  }
+  return 'Flash & Quizz'
+})
 
 // Utility
 function shuffleArray<T>(array: T[]): T[] {
@@ -42,9 +69,23 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled
 }
 
+// Game selection handlers
+function handleSelectGame(game: string) {
+  selectGame(game)
+  gameMode.value = 'gameSelection'
+}
+
+async function handleSelectItem(item: InventoryItem) {
+  await loadContent(item)
+  if (contentLoadingState.value === 'success' && selectedContent.value) {
+    gameMode.value = 'contentSelection'
+  }
+}
+
 // Quiz functions
 function startQuiz() {
-  shuffledQuestions.value = shuffleArray(originalQuestions)
+  if (!selectedContent.value || selectedItem.value?.type !== 'Quizz') return
+  shuffledQuestions.value = shuffleArray(selectedContent.value as Question[])
   quizState.value = 'playing'
   currentQuestionIndex.value = 0
   score.value = 0
@@ -64,7 +105,8 @@ function handleAnswer(isCorrect: boolean) {
 }
 
 function restartQuiz() {
-  shuffledQuestions.value = shuffleArray(originalQuestions)
+  if (!selectedContent.value) return
+  shuffledQuestions.value = shuffleArray(selectedContent.value as Question[])
   quizState.value = 'playing'
   currentQuestionIndex.value = 0
   score.value = 0
@@ -72,8 +114,9 @@ function restartQuiz() {
 
 // Flashcard functions
 function startFlashcards(mode: FlashcardMode) {
+  if (!selectedContent.value || selectedItem.value?.type !== 'Flash') return
   flashcardMode.value = mode
-  const shuffled = shuffleArray(originalFlashcards)
+  const shuffled = shuffleArray(selectedContent.value as Flashcard[])
   shuffledFlashcards.value = mode === 'partial' ? shuffled.slice(0, 30) : shuffled
   flashcardKnown.value = 0
   flashcardTotal.value = shuffledFlashcards.value.length
@@ -95,7 +138,28 @@ function restartFlashcards() {
 function goToMenu() {
   gameMode.value = 'menu'
   quizState.value = 'start'
+  clearSelection()
 }
+
+function goToGameSelection() {
+  gameMode.value = 'gameSelection'
+  quizState.value = 'start'
+  clearGameSelection()
+}
+
+function goToContentSelection() {
+  gameMode.value = 'contentSelection'
+  quizState.value = 'start'
+}
+
+async function handleRefresh() {
+  await refreshAll()
+}
+
+// Load inventory on mount
+onMounted(() => {
+  loadInventory()
+})
 </script>
 
 <template>
@@ -108,7 +172,7 @@ function goToMenu() {
           @click="goToMenu"
         >
           <span class="text-gold">⚔️</span>
-          <span class="mx-2">Donjon & Cie</span>
+          <span class="mx-2">{{ headerTitle }}</span>
           <span class="text-gold">⚔️</span>
         </h1>
       </div>
@@ -117,71 +181,80 @@ function goToMenu() {
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
 
-      <!-- ==================== MAIN MENU ==================== -->
-      <div v-if="gameMode === 'menu'" class="max-w-2xl mx-auto text-center py-8">
-        <div class="mb-8">
-          <div class="text-7xl mb-6">🏰</div>
-          <h2 class="text-3xl md:text-4xl font-bold text-gold mb-4">
-            Bienvenue, employé !
-          </h2>
-          <p class="text-lg text-parchment/70 mb-2">
-            Testez vos connaissances sur le jeu de rôle
+      <!-- ==================== MAIN MENU (Game Selection) ==================== -->
+      <GameMenu
+        v-if="gameMode === 'menu'"
+        :games="games"
+        :loading-state="loadingState"
+        :error="error"
+        @select-game="handleSelectGame"
+        @refresh="handleRefresh"
+      />
+
+      <!-- ==================== GAME SELECTION (Content List) ==================== -->
+      <ContentMenu
+        v-else-if="gameMode === 'gameSelection'"
+        :game-name="selectedGame || ''"
+        :items="selectedGameItems"
+        :content-loading-state="contentLoadingState"
+        :content-error="contentError"
+        @select-item="handleSelectItem"
+        @back="goToMenu"
+      />
+
+      <!-- ==================== CONTENT SELECTION (Start Game) ==================== -->
+      <div v-else-if="gameMode === 'contentSelection'" class="max-w-2xl mx-auto text-center py-8">
+        <button
+          @click="goToGameSelection"
+          class="text-gold hover:text-gold-light transition-colors mb-6 inline-flex items-center gap-2"
+        >
+          ← Retour à {{ selectedGame }}
+        </button>
+
+        <!-- Quiz Content -->
+        <div v-if="selectedItem?.type === 'Quizz'" class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-8">
+          <div class="text-6xl mb-4">📝</div>
+          <h2 class="text-2xl font-bold text-gold mb-2">{{ selectedItem.titre }}</h2>
+          <p class="text-parchment/60 text-sm mb-4">
+            Questions à choix multiples avec feedback immédiat
           </p>
-          <p class="text-2xl font-bold text-gold-light">
-            Donjon & Compagnie
-          </p>
+          <div class="bg-dungeon-dark/50 rounded-lg p-3 mb-6">
+            <span class="text-gold font-bold">{{ (selectedContent as Question[])?.length || 0 }}</span>
+            <span class="text-parchment/60 text-sm"> questions</span>
+          </div>
+          <button
+            @click="startQuiz"
+            class="w-full px-6 py-3 bg-gradient-to-r from-gold to-gold-light text-dungeon-dark font-bold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gold/30"
+          >
+            🎲 Lancer le quiz
+          </button>
         </div>
 
-        <p class="text-parchment/60 mb-8">
-          Choisissez votre mode d'entraînement :
-        </p>
-
-        <!-- Mode Selection -->
-        <div class="grid md:grid-cols-2 gap-6">
-          <!-- Quiz Card -->
-          <div class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-6 hover:border-gold/60 transition-all">
-            <div class="text-5xl mb-4">📝</div>
-            <h3 class="text-2xl font-bold text-gold mb-2">Quiz</h3>
-            <p class="text-parchment/60 text-sm mb-4">
-              Questions à choix multiples avec feedback immédiat
-            </p>
-            <div class="bg-dungeon-dark/50 rounded-lg p-3 mb-4">
-              <span class="text-gold font-bold">{{ totalQuizQuestions }}</span>
-              <span class="text-parchment/60 text-sm"> questions</span>
-            </div>
+        <!-- Flashcard Content -->
+        <div v-else-if="selectedItem?.type === 'Flash'" class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-8">
+          <div class="text-6xl mb-4">🃏</div>
+          <h2 class="text-2xl font-bold text-gold mb-2">{{ selectedItem.titre }}</h2>
+          <p class="text-parchment/60 text-sm mb-4">
+            Cartes recto-verso pour réviser
+          </p>
+          <div class="bg-dungeon-dark/50 rounded-lg p-3 mb-6">
+            <span class="text-gold font-bold">{{ (selectedContent as Flashcard[])?.length || 0 }}</span>
+            <span class="text-parchment/60 text-sm"> cartes disponibles</span>
+          </div>
+          <div class="space-y-2">
             <button
-              @click="startQuiz"
+              v-if="(selectedContent as Flashcard[])?.length > 30"
+              @click="startFlashcards('partial')"
+              class="w-full px-6 py-2 bg-dungeon-light border border-gold/50 text-gold font-semibold rounded-lg transition-all duration-300 hover:bg-gold/20"
+            >
+              ⚡ Mode rapide (30 cartes)
+            </button>
+            <button
+              @click="startFlashcards('full')"
               class="w-full px-6 py-3 bg-gradient-to-r from-gold to-gold-light text-dungeon-dark font-bold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gold/30"
             >
-              🎲 Lancer le quiz
+              📚 Mode complet ({{ (selectedContent as Flashcard[])?.length || 0 }} cartes)
             </button>
-          </div>
-
-          <!-- Flashcards Card -->
-          <div class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-6 hover:border-gold/60 transition-all">
-            <div class="text-5xl mb-4">🃏</div>
-            <h3 class="text-2xl font-bold text-gold mb-2">Flashcards</h3>
-            <p class="text-parchment/60 text-sm mb-4">
-              Cartes recto-verso pour réviser les règles
-            </p>
-            <div class="bg-dungeon-dark/50 rounded-lg p-3 mb-4">
-              <span class="text-gold font-bold">{{ totalFlashcards }}</span>
-              <span class="text-parchment/60 text-sm"> cartes disponibles</span>
-            </div>
-            <div class="space-y-2">
-              <button
-                @click="startFlashcards('partial')"
-                class="w-full px-6 py-2 bg-dungeon-light border border-gold/50 text-gold font-semibold rounded-lg transition-all duration-300 hover:bg-gold/20"
-              >
-                ⚡ Mode rapide (30 cartes)
-              </button>
-              <button
-                @click="startFlashcards('full')"
-                class="w-full px-6 py-2 bg-gradient-to-r from-gold to-gold-light text-dungeon-dark font-bold rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-gold/30"
-              >
-                📚 Mode complet ({{ totalFlashcards }} cartes)
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -204,7 +277,7 @@ function goToMenu() {
           :score="score"
           :total-questions="totalQuizQuestions"
           @restart="restartQuiz"
-          @menu="goToMenu"
+          @menu="goToContentSelection"
         />
       </template>
 
@@ -215,7 +288,7 @@ function goToMenu() {
           v-if="quizState === 'playing'"
           :flashcards="shuffledFlashcards"
           @finish="handleFlashcardFinish"
-          @quit="goToMenu"
+          @quit="goToContentSelection"
         />
 
         <!-- Flashcard Results -->
@@ -224,7 +297,7 @@ function goToMenu() {
           :known="flashcardKnown"
           :total="flashcardTotal"
           @restart="restartFlashcards"
-          @menu="goToMenu"
+          @menu="goToContentSelection"
         />
       </template>
 
@@ -233,7 +306,7 @@ function goToMenu() {
     <!-- Footer -->
     <footer class="py-4 border-t border-gold/20 mt-auto">
       <div class="container mx-auto px-4 text-center text-parchment/40 text-sm">
-        Basé sur le jeu de rôle Donjon & Cie
+        Flash & Quizz - Apprentissage interactif
       </div>
     </footer>
   </div>
