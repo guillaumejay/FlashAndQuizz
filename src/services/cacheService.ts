@@ -38,6 +38,12 @@ export function getInventory(): InventoryItem[] | null {
   return null
 }
 
+// Retourne le cache même s'il est expiré (pour fallback en cas d'erreur)
+export function getStaleInventory(): InventoryItem[] | null {
+  const cache = getCache()
+  return cache.inventory?.data ?? null
+}
+
 function isValidInventoryItem(item: unknown): item is InventoryItem {
   if (typeof item !== 'object' || item === null) return false
   const obj = item as Record<string, unknown>
@@ -78,6 +84,12 @@ export function getContent(url: string): Question[] | { flashcards: Flashcard[] 
     return entry.data
   }
   return null
+}
+
+// Retourne le cache même s'il est expiré (pour fallback en cas d'erreur)
+export function getStaleContent(url: string): Question[] | { flashcards: Flashcard[] } | null {
+  const cache = getCache()
+  return cache.content[url]?.data ?? null
 }
 
 export function setContent(url: string, data: Question[] | { flashcards: Flashcard[] }): void {

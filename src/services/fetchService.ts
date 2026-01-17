@@ -37,6 +37,15 @@ export async function fetchInventory(forceRefresh = false): Promise<FetchResult<
 	try {
 		const data = await fetchJson<InventoryItem[]>(INVENTORY_URL);
 		if (!cacheService.isValidInventory(data)) {
+			// JSON invalide - essayer le cache stale
+			const staleCache = cacheService.getStaleInventory();
+			if (staleCache) {
+				return {
+					data: staleCache,
+					error: "Format d'inventaire invalide, données du cache utilisées",
+					fromCache: true,
+				};
+			}
 			return {
 				data: null,
 				error: "Format d'inventaire invalide",
@@ -46,12 +55,12 @@ export async function fetchInventory(forceRefresh = false): Promise<FetchResult<
 		cacheService.setInventory(data);
 		return { data, error: null, fromCache: false };
 	} catch (err) {
-		// Network error - try to return stale cache
-		const staleCache = cacheService.getInventory();
+		// Network error or JSON parse error - try to return stale cache
+		const staleCache = cacheService.getStaleInventory();
 		if (staleCache) {
 			return {
 				data: staleCache,
-				error: `Erreur réseau, données du cache utilisées`,
+				error: "Erreur réseau, données du cache utilisées",
 				fromCache: true,
 			};
 		}
@@ -83,12 +92,12 @@ export async function fetchContent(item: InventoryItem, forceRefresh = false): P
 		cacheService.setContent(url, data);
 		return { data, error: null, fromCache: false };
 	} catch (err) {
-		// Network error - try to return stale cache
-		const staleCache = cacheService.getContent(url);
+		// Network error or JSON parse error - try to return stale cache
+		const staleCache = cacheService.getStaleContent(url);
 		if (staleCache) {
 			return {
 				data: staleCache,
-				error: `Erreur réseau, données du cache utilisées`,
+				error: "Erreur réseau, données du cache utilisées",
 				fromCache: true,
 			};
 		}

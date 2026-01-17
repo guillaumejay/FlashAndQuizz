@@ -64,3 +64,22 @@ Modification de `src/composables/useGameContent.ts` :
 Exemples de transformation : `$3$` → `<span class="math">3</span>`, `$2d6$` → `<span class="math">2d6</span>`
 
 ---
+
+## Session du 2026-01-17 à 15:15
+
+### Demande utilisateur
+
+> En cas d'erreur sur le fetch (que ce soit au chargement ou si le JSON est invalide) prend le cache en localStorage si disponible
+
+### Conclusion
+
+Modifications apportées :
+
+1. **cacheService.ts** : Ajout des fonctions `getStaleInventory()` et `getStaleContent(url)` qui retournent le cache même s'il est expiré
+2. **fetchService.ts** :
+   - En cas de JSON invalide pour l'inventaire, utilisation du cache stale comme fallback
+   - En cas d'erreur réseau ou de parsing JSON, utilisation des fonctions stale au lieu des fonctions normales
+
+Le cache localStorage est maintenant utilisé comme fallback dans tous les cas d'erreur (réseau, parsing, format invalide).
+
+---
