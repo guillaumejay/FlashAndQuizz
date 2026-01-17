@@ -46,3 +46,21 @@ Modifications apportées :
 3. **Tri alphabétique dans ContentMenu.vue** : Ajout d'une computed `sortedItems` qui trie les éléments par titre avec `localeCompare('fr')`
 
 ---
+
+## Session du 2026-01-17 à 15:00
+
+### Demande utilisateur
+
+> Les JSON viennent d'un export de NotebookLM, et cet export entoure les valeurs (essentiellement) numériques dans les textes de $ : par exemple $3$ ou $2d6$ - après avoir fetché les textes applique une regex pour transformer ces blocs en span class="math"
+
+### Conclusion
+
+Modification de `src/composables/useGameContent.ts` :
+
+1. Ajout de la fonction `transformMathNotation(text)` qui applique la regex `\$([^$]+)\$` → `<span class="math">$1</span>`
+2. Ajout de la fonction récursive `transformContent(data)` qui parcourt les objets/tableaux et transforme toutes les chaînes
+3. Application automatique de la transformation après le chargement des quiz et flashcards
+
+Exemples de transformation : `$3$` → `<span class="math">3</span>`, `$2d6$` → `<span class="math">2d6</span>`
+
+---

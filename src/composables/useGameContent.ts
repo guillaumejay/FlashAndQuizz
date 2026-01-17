@@ -3,6 +3,29 @@ import type { InventoryItem, GroupedInventory, LoadingState } from '../types/inv
 import type { Question, Flashcard } from '../types/quiz'
 import { fetchInventory, fetchContent, clearCache } from '../services/fetchService'
 
+// Transforme les $...$ (format NotebookLM) en <span class="math">...</span>
+function transformMathNotation(text: string): string {
+  return text.replace(/\$([^$]+)\$/g, '<span class="math">$1</span>')
+}
+
+// Applique la transformation récursivement sur un objet
+function transformContent<T>(data: T): T {
+  if (typeof data === 'string') {
+    return transformMathNotation(data) as T
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => transformContent(item)) as T
+  }
+  if (data !== null && typeof data === 'object') {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(data)) {
+      result[key] = transformContent(value)
+    }
+    return result as T
+  }
+  return data
+}
+
 // State
 const inventory = ref<InventoryItem[]>([])
 const loadingState = ref<LoadingState>('idle')
@@ -60,11 +83,12 @@ async function loadContent(item: InventoryItem, forceRefresh = false): Promise<v
   const result = await fetchContent(item, forceRefresh)
 
   if (result.data) {
-    // Handle both Quiz and Flashcard formats
+    // Handle both Quiz and Flashcard formats, then transform $...$ to <span class="math">
     if (item.type === 'Flash' && 'flashcards' in result.data) {
-      selectedContent.value = (result.data as { flashcards: Flashcard[] }).flashcards
+      const flashcards = (result.data as { flashcards: Flashcard[] }).flashcards
+      selectedContent.value = transformContent(flashcards)
     } else if (item.type === 'Quizz' && Array.isArray(result.data)) {
-      selectedContent.value = result.data as Question[]
+      selectedContent.value = transformContent(result.data as Question[])
     } else {
       selectedContent.value = null
       contentError.value = 'Format de données invalide'
