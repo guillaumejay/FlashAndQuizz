@@ -22,3 +22,35 @@ Ce projet, nommé "FlashAndQuizz", est une application web développée avec Vue
 - `App.vue` : Le composant racine de l'application.
 
 Ce projet vise à offrir aux utilisateurs un moyen engageant d'apprendre et d'auto-évaluer leur compréhension sur divers sujets.
+
+---
+
+## Directive de Journalisation des Sessions AI
+
+**OBLIGATOIRE :** À chaque interaction, l'assistant IA doit documenter automatiquement la session dans le fichier `AI-sessions.md` à la racine du projet.
+
+### Format de journalisation :
+
+```markdown
+## Session du [DATE] à [HEURE]
+
+### Demande utilisateur
+> [Prompt de l'utilisateur]
+
+### Questions de clarification (si applicable)
+- **Q :** [Question posée par l'IA]
+- **R :** [Réponse de l'utilisateur]
+
+### Conclusion
+[Résumé concis de l'action effectuée ou de la réponse finale - PAS les réflexions intermédiaires]
+
+---
+```
+
+### Règles :
+1. **Horodatage** : Utiliser le format `YYYY-MM-DD` pour la date et `HH:MM` pour l'heure
+2. **Prompts** : Reproduire fidèlement la demande de l'utilisateur
+3. **Questions/Réponses** : Ne documenter que s'il y a eu des échanges de clarification
+4. **Conclusion** : Résumer uniquement le résultat final, pas le processus de réflexion
+5. **Séparateur** : Utiliser `---` entre chaque session
+6. **Ajout** : Toujours ajouter les nouvelles sessions à la fin du fichier (ne pas écraser)

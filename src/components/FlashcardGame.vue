@@ -71,9 +71,7 @@ function nextCard() {
 					<div class="text-center mb-4">
 						<span class="text-gold/60 text-sm uppercase tracking-wider">Question</span>
 					</div>
-					<p class="text-xl md:text-2xl text-parchment font-semibold leading-relaxed text-center">
-						{{ currentCard.f }}
-					</p>
+					<p class="text-xl md:text-2xl text-parchment font-semibold leading-relaxed text-center" v-html="currentCard.f"></p>
 					<div class="text-center mt-6">
 						<span class="text-gold/50 text-sm">Cliquez pour retourner</span>
 					</div>
@@ -84,9 +82,7 @@ function nextCard() {
 					<div class="text-center mb-4">
 						<span class="text-gold text-sm uppercase tracking-wider">Réponse</span>
 					</div>
-					<p class="text-lg md:text-xl text-parchment leading-relaxed text-center">
-						{{ currentCard.b }}
-					</p>
+					<p class="text-lg md:text-xl text-parchment leading-relaxed text-center" v-html="currentCard.b"></p>
 				</div>
 			</div>
 		</div>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { InventoryItem } from '../types/inventory'
 import type { FlashcardMode } from '../types/quiz'
 
-defineProps<{
+const props = defineProps<{
   gameName: string
   items: InventoryItem[]
   loadingItem: InventoryItem | null
@@ -13,6 +14,10 @@ const emit = defineEmits<{
   startFlashcards: [item: InventoryItem, mode: FlashcardMode]
   back: []
 }>()
+
+const sortedItems = computed(() => {
+  return [...props.items].sort((a, b) => a.titre.localeCompare(b.titre, 'fr'))
+})
 </script>
 
 <template>
@@ -36,7 +41,7 @@ const emit = defineEmits<{
     <!-- Content Cards Grid -->
     <div class="grid md:grid-cols-2 gap-6">
       <div
-        v-for="item in items"
+        v-for="item in sortedItems"
         :key="item.url"
         class="bg-dungeon-medium border-2 border-gold/30 rounded-xl p-6 hover:border-gold/60 transition-all"
       >
