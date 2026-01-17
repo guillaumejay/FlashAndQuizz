@@ -10,6 +10,7 @@ import FlashcardResult from "./components/FlashcardResult.vue";
 import GameMenu from "./components/GameMenu.vue";
 import ContentMenu from "./components/ContentMenu.vue";
 import { version } from "../package.json";
+import "./assets/styles/global.css";
 
 // Game content composable
 const { loadingState, error, selectedGame, selectedItem, selectedContent, games, selectedGameItems, loadInventory, loadContent, selectGame, clearSelection, clearGameSelection, refreshAll } = useGameContent();
@@ -206,10 +207,3 @@ onMounted(() => {
 		</footer>
 	</div>
 </template>
-
-<style>
-.math {
-	font-weight: bold;
-	color: #ffd700;
-}
-</style>
