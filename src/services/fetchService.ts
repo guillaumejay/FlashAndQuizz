@@ -3,8 +3,8 @@ import type { Question, Flashcard } from "../types/quiz";
 import { toRawGistUrl } from "../utils/gistUrl";
 import * as cacheService from "./cacheService";
 
-// Inventory URL - configure this with your Gist URL
-const INVENTORY_URL = "https://gist.githubusercontent.com/guillaumejay/684d9dc87e9e158477b0e4fc4164f422/raw/9bd622a913e951bb1e43ee59833e4462f15a4f36/FQ-Inventaire.json";
+// Inventory URL - configure this with your permanent Gist URL ( https://stackoverflow.com/a/47175630/130420 )
+const INVENTORY_URL = "https://gist.github.com/guillaumejay/684d9dc87e9e158477b0e4fc4164f422";
 
 export interface FetchResult<T> {
 	data: T | null;
@@ -22,8 +22,11 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 export async function fetchInventory(forceRefresh = false): Promise<FetchResult<InventoryItem[]>> {
-	// Try cache first (unless force refresh)
-	if (!forceRefresh) {
+	// Si connecté, toujours recharger depuis le réseau (ignorer le cache)
+	const shouldBypassCache = navigator.onLine || forceRefresh;
+
+	// Try cache first (unless force refresh or online)
+	if (!shouldBypassCache) {
 		const cached = cacheService.getInventory();
 		if (cached) {
 			return { data: cached, error: null, fromCache: true };
@@ -63,8 +66,11 @@ export async function fetchInventory(forceRefresh = false): Promise<FetchResult<
 export async function fetchContent(item: InventoryItem, forceRefresh = false): Promise<FetchResult<Question[] | { flashcards: Flashcard[] }>> {
 	const url = toRawGistUrl(item.url);
 
-	// Try cache first (unless force refresh)
-	if (!forceRefresh) {
+	// Si connecté, toujours recharger depuis le réseau (ignorer le cache)
+	const shouldBypassCache = navigator.onLine || forceRefresh;
+
+	// Try cache first (unless force refresh or online)
+	if (!shouldBypassCache) {
 		const cached = cacheService.getContent(url);
 		if (cached) {
 			return { data: cached, error: null, fromCache: true };
