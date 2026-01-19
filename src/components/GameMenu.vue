@@ -15,6 +15,7 @@ const emit = defineEmits<{
 function getGameIcon(game: string): string {
 	// Map game names to emojis
 	const icons: Record<string, string> = {
+		Alien: "👽",
 		"Donjon&Cie": "🏰",
 		"Donjons et Chatons": "🐱",
 		default: "🎮",
